@@ -104,3 +104,22 @@
                  (if (pyth-trip? a b c)
                    (* a b c)))))
 
+;; Problem 10 --------------------------------------------------
+(defn prime? [n]
+  (cond (<= n 1) false
+        (= n 2) true
+        :else (loop [f 2]
+                (cond (zero? (rem n f)) false
+                      (> f (Math/sqrt n)) true
+                      :else (recur (inc f))))))
+(defn prime-seq
+  "list of primes bigger than x"
+  [x]
+  (let [p (loop [n x]
+            (if (prime? n)
+              n
+              (recur (inc n))))]
+    (lazy-seq (cons p (prime-seq (inc p)) ))))
+
+(defn p10 []
+  (apply + (take-while #(< % 2000000) (prime-seq 1))))
