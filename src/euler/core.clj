@@ -95,5 +95,12 @@
                   (partition 13 1 bign)))))
 
 ;; Problem 9 --------------------------------------------------
+(defn pyth-trip? [a b c] (= (+ (* a a) (* b b)) (* c c)))
 
+(defn p9 []
+  (remove nil? (for [a (range 1 1000)
+                     b (range 1 1000)
+                     :let [c (- 1000 a b)]]
+                 (if (pyth-trip? a b c)
+                   (* a b c)))))
 
