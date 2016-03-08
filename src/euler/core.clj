@@ -147,19 +147,27 @@
               [20 73 35 29 78 31 90 1 74 31 49 71 48 86 81 16 23 57 5 54]
               [1 70 54 71 83 51 54 69 16 92 33 48 61 43 52 1 89 19 67 48]])
 
-(def simple-grid (partition 5 (range 25)))
-
-(defn up-right [[x y] w h] (if (and (>= y 0) (< x w))
+(defn up-right
+  "get the cell up and right on this grid, taking
+  into account boundaries"
+  [[x y] w h] (if (and (>= y 0) (< x w))
                              (let [nx (inc x)
                                    ny (dec y)]
                                (lazy-seq (cons [x y] (up-right [nx ny] w h))))
                              nil))
-;;(doall (up-right [1 2] 3 3))
 
-(defn xy "get cell at (x, y)"
+(defn xy
+  "get cell at (x, y)"
   [grid x y] (nth (nth grid x) y))
 
-(xy simple-grid 1 2)
+(defn transpose
+  "transpose the grid"
+  [g] (apply map list g))
+
+(defn rotate-90
+  "rotate the grid 90 degrees"
+  [g] (map reverse (transpose g)))
+
 
 (defn rotate-45-r
   "construct the left and bottom edges, and then find
@@ -170,12 +178,23 @@
                          (map vector (range 1 w) (repeat (dec h))))]
         (map (fn [x] (up-right x w h)) edge)))
 
-;;up-rights
-(map (fn [row] (map (fn [[x y]] (xy p10grid x y)) row))
-     (apply concat (map #(partition 4 1 %) (rotate-45-r p10grid))))
+(defn p11 [g]
+  (apply max
+         (map (fn [[& r]] (apply * r))
+              (concat
+               ;;up-rights
+               (map (fn [row] (map (fn [[x y]] (xy g x y)) row))
+                    (apply concat (map #(partition 4 1 %) (rotate-45-r g))))
 
-;;horizontals
-(map #(partition 4 1 %) p10grid)
+               ;;horizontals
+               (apply concat (map #(partition 4 1 %) g))
 
+               ;;verticals
+               (apply concat (map #(partition 4 1 %) (transpose g)))
 
-(map vector (range 10) (repeat 0))
+               ;;up-lefts
+               (let [g (rotate-90 simple-grid)]
+                 (map (fn [row] (map (fn [[x y]] (xy g x y)) row))
+                      (apply concat (map #(partition 4 1 %) (rotate-45-r g)))))))))
+
+;; Problem 11 --------------------------------------------------
