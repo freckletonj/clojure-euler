@@ -421,5 +421,68 @@
 
 
 ;; Problem 18 --------------------------------------------------
+;; idea: inverse every number and find the shortest path
+;; if a certain path ever becomes longer than the path to another
+;; leaf, start exploring those shorter paths. In the end, inverse
+;; and sum.
+
+(def tri-p18 [[75]
+              [95 64]
+              [17 47 82]
+              [18 35 87 10]
+              [20 4 82 47 65]
+              [19 1 23 75 3 34]
+              [88 02 77 73 7 63 67]
+              [99 65 4 28 6 16 70 92]
+              [41 41 26 56 83 40 80 70 33]
+              [41 48 72 33 47 32 37 16 94 29]
+              [53 71 44 65 25 43 91 52 97 51 14]
+              [70 11 33 28 77 73 17 78 39 68 17 57]
+              [91 71 52 38 17 14 91 43 58 50 27 29 48]
+              [63 66 4 68 89 53 67 30 73 16 69 87 40 31]
+              [4 62 98 27 23 9 70 98 73 93 38 53 60 4 23]])
+(defn inv-grid
+  "inverse all numbers in a 2d seq"
+  [grid]
+  (map (fn [row] (map (fn [cell] (/ 1 cell)) row)) grid))
+(inv-grid tri-p18)
+
+(defn bin-tree-inefficient
+  "NOTE: this is incredibly inefficient
+  convert a triangle to a binary tree"
+  [[[head] & res] tree]
+  (if (nil? head)
+    nil
+    (remove nil? (cons head (map (fn [d] (bin-tree (map (partial drop d) res) tree))
+                                 (range 2))))))
+
+(defn find-longest
+  "Find the longest path through a triangle tree,
+  `leaves` here represents the decision leaves,
+  not the tree's leaves"
+  ([tree] (let [itree (inv-grid tree)]
+            (find-longest itree [[(-> itree (nth 0) (nth 0)) [0 0]]])))
+  ([itree leaves] (let [height                      (count itree)
+                        sleaves                     (sort leaves)
+                        [[val [row col]] & rleaves] sleaves]
+                    (if (< (inc row) height)
+                      (let [row2 (inc row)
+                            col2 (inc col)
+                            n1   (-> itree (nth row2) (nth col))
+                            n2   (-> itree (nth row2) (nth col2))
+                            v1   [(+ val n1) [row2 col]]
+                            v2   [(+ val n2) [row2 col2]]]
+                        (println sleaves)
+                        (find-longest itree (concat [v1 v2] rleaves)))
+                      (/ 1 val)))))
+(find-longest tri-p18)
+
+(use 'clojure.repl)
+(doc sort-by)
 
 
+(map (partial drop 1) [(range 2) (range 3) (range 4)])
+(nth [1 2 3] 0)
+(cons 1 [2 3 4])
+(conj [1 2 3] 4)
+(concat [1] [2 3 4])
