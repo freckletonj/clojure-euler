@@ -441,47 +441,66 @@
               [91 71 52 38 17 14 91 43 58 50 27 29 48]
               [63 66 4 68 89 53 67 30 73 16 69 87 40 31]
               [4 62 98 27 23 9 70 98 73 93 38 53 60 4 23]])
-(defn inv-grid
+#_(defn inv-grid
   "inverse all numbers in a 2d seq"
   [grid]
   (map (fn [row] (map (fn [cell] (/ 1 cell)) row)) grid))
-(inv-grid tri-p18)
 
-(defn bin-tree-inefficient
+#_(defn bin-tree-inefficient
   "NOTE: this is incredibly inefficient
   convert a triangle to a binary tree"
   [[[head] & res] tree]
   (if (nil? head)
     nil
-    (remove nil? (cons head (map (fn [d] (bin-tree (map (partial drop d) res) tree))
+    (remove nil? (cons head (map (fn [d] (bin-tree-inefficient (map (partial drop d) res) tree))
                                  (range 2))))))
 
-(defn find-longest
+(defn rowcol[grid row col] (-> grid (nth row) (nth col)))
+#_(defn find-longest
   "Find the longest path through a triangle tree,
   `leaves` here represents the decision leaves,
   not the tree's leaves"
-  ([tree] (let [itree (inv-grid tree)]
-            (find-longest itree [[(-> itree (nth 0) (nth 0)) [0 0]]])))
-  ([itree leaves] (let [height                      (count itree)
-                        sleaves                     (sort leaves)
-                        [[val [row col]] & rleaves] sleaves]
+  ([tree] (let [itree (inv-grid tree)
+                ival  (rowcol itree 0 0)
+                val   (rowcol tree 0 0)]
+            (find-longest itree [[ival val [0 0]]])))
+  ([itree leaves] (let [height                           (count itree)
+                        sleaves                          (sort leaves)
+                        [[ival val [row col]] & rleaves] sleaves]
                     (if (< (inc row) height)
-                      (let [row2 (inc row)
-                            col2 (inc col)
-                            n1   (-> itree (nth row2) (nth col))
-                            n2   (-> itree (nth row2) (nth col2))
-                            v1   [(+ val n1) [row2 col]]
-                            v2   [(+ val n2) [row2 col2]]]
-                        (println sleaves)
-                        (find-longest itree (concat [v1 v2] rleaves)))
-                      (/ 1 val)))))
+                      (let [row2  (inc row)
+                            col2  (inc col)
+                            iv1   (rowcol itree row2 col)
+                            iv2   (rowcol itree row2 col2)
+                            v1    (/ 1 (rowcol itree row2 col))
+                            v2    (/ 1 (rowcol itree row2 col2))
+                            leaf1 [(+ ival iv1) (+ val v1) [row2 col]]
+                            leaf2 [(+ ival iv2) (+ val v2) [row2 col2]]]
+                        (println [ival  val [row col]])
+                        (find-longest itree (concat [leaf1 leaf2] rleaves)))
+                      (do
+                        [val [row col]])))))
+(defn find-longest
+  "start from the bottom, and roll up the maxes towards the top"
+  [tree]
+  (let [[ra rb & rest] tree
+        ramax          (map #(apply max %) (partition 2 1 ra))]
+    (if (nil? rb)
+      (nth ra 0)
+      (find-longest (cons (map + ramax rb) rest)))))
+(defn p18 []
+  (find-longest (reverse tri-p18)))
+
+
+
+(map #(println "--------------------------------------------------" %) (range 10))
 (find-longest tri-p18)
 
 (use 'clojure.repl)
 (doc sort-by)
 
+(sort [[9 4 1] [1 4 9] [4 9 1] [1 9 4]])
 
-(map (partial drop 1) [(range 2) (range 3) (range 4)])
 (nth [1 2 3] 0)
 (cons 1 [2 3 4])
 (conj [1 2 3] 4)
