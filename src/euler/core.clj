@@ -491,16 +491,48 @@
 (defn p18 []
   (find-longest (reverse tri-p18)))
 
+;; Problem 19 --------------------------------------------------
+;; kinda boring... not worth my time
+
+;; Problem 20 --------------------------------------------------
+(defn p20 []
+  (apply + (map #(Character/digit % 10)  (str (apply *' (range 1 100))))))
+
+;; Problem 21 --------------------------------------------------
+(defn factors [x]
+  (filter #(= 0 (mod x %)) (range 1 (+ 1 (/ x 2)))))
+
+;; wrong approach
+#_(map (fn [[k v]] v) 
+     (filter (fn [[k v]] (and (< 1 (count v))
+                              (not (zero? k))))
+             (reduce (fn [coll x]
+                       (let [s (apply + (factors x))]
+                         (update coll s (fn [matches] (cons x matches)))))
+                     {} (range 1 1000))))
+
+(apply + (filter (fn [x] (let [y (apply + (factors x))
+                               s (apply + (factors y))]
+                           (and (= x s) (not (= x y))))) (range 2 10001)))
 
 
+;; Problem 22 --------------------------------------------------
+
+
+
+;; Scratch stuff --------------------------------------------------
 (map #(println "--------------------------------------------------" %) (range 10))
-(find-longest tri-p18)
+(transduce (comp (map inc) (filter odd?)) + 0 [1 2 3])
+(+)
 
 (use 'clojure.repl)
 (doc sort-by)
 
-(sort [[9 4 1] [1 4 9] [4 9 1] [1 9 4]])
+(get {123 :a 456 :b} 456)
+(update {:a [1] 123 [55]} 5 (fn [x] (cons 2 x)))
 
+(sort [[9 4 1] [1 4 9] [4 9 1] [1 9 4]])
+(:d (conj {:a 1 :b 2} {:c 3}))
 (nth [1 2 3] 0)
 (cons 1 [2 3 4])
 (conj [1 2 3] 4)
