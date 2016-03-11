@@ -517,6 +517,22 @@
 
 
 ;; Problem 22 --------------------------------------------------
+;; pretty uninteresting
+
+;; Problem 23 --------------------------------------------------
+;; Lexicographic Permutations
+;; note: there are smarter, non-brute-force ways of solving this
+;; even without libraries, basically just using factoradic numbers
+
+(require '[clojure.math.combinatorics :as combo])
+(defn p23 []
+  (take 1 (drop 999999 (combo/permutations (range 10)))))
+
+;; Problem 24
+(defn factors [x]
+  (filter #(= 0 (mod x %)) (range 1 (+ 1 (/ x 2)))))
+(map println (remove nil? (map #(let [facs (factors %)
+                                        fs  (apply + facs)] (when (< % fs) [% fs facs (count facs)])) (range 100))))
 
 
 
