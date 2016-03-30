@@ -534,6 +534,63 @@
 (map println (remove nil? (map #(let [facs (factors %)
                                         fs  (apply + facs)] (when (< % fs) [% fs facs (count facs)])) (range 100))))
 
+;; Problem 26
+(defn div-seq
+  "a lazy sequence of the next digits in a fraction"
+  [num den]
+  (let [times (int (Math/floor (float (/ num den))))
+        nnum (* 10 (- num (* times den)))]
+    (lazy-seq (cons times (div-seq nnum den)))))
+
+(defn find-pattern
+  "finds the shortest reapeating pattern in a seq"
+  [s]
+  (let [len (count s)]
+    (loop [ws      450 ;;window size
+           pattern []] 
+      (if (or (not (empty? pattern)) (> ws len))
+        pattern
+        (recur (inc ws)
+               (loop [wp 0] ;;window position
+                 (let [parts  (partition ws ws (drop wp s))
+                       match? (apply = parts)]
+                   (cond
+                     (> (+ wp ws) len)   []
+                     (= 1 (count parts)) []
+                     match?              (nth parts 0)
+                     :else               (recur (inc wp))))))))))
+
+(defn p26
+  "note: this is subsuboptimal. Very slow brute force method."
+  []
+  (take 1 (sort-by (fn [tuple] (count (nth tuple 1))) > (map (fn [x] [x (find-pattern (take 2000 (drop 1 (div-seq 1 x))))])
+                                                             (range 980 1000)))))
+
+
+;; Problem 27
+(defn factors [x]
+  (filter #(= 0 (mod x %)) (range 1 (+ 1 (/ x 2)))))
+(defn prime? [x]
+  (= 1 (count (factors x))))
+(defn p27 []
+  (let [bigl (reduce (fn [coll x] (conj coll x (- x)))
+                     []
+                     (filter prime? (range 1000)))]
+    (first  (sort-by (fn [[_ _ c]] (- c))  (for [a bigl
+                                                 b bigl]
+                                             [a b (count (take-while prime? (map (fn [x] (+ (* x x)
+                                                                                            (* a x)
+                                                                                            b))
+                                                                                 (range 100))))])))))
+
+(map #(+ 3 (* % %)) (range 10))
+
+(conj [1 2] 3 4)
+
+(map (fn [x] (prn (str x " : " (vec (factors (inc (* x x)))))))
+     (range 30))
+
+
 
 
 ;; Scratch stuff --------------------------------------------------
