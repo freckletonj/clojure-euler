@@ -583,14 +583,101 @@
                                                                                             b))
                                                                                  (range 100))))])))))
 
-(map #(+ 3 (* % %)) (range 10))
+;; Problem 28
+(let [m (vec (repeat 5 (vec (repeat 5 0))))]
+  (update-in m [1 1] inc))
 
-(conj [1 2] 3 4)
+(defn spiral-coords
+  "generate coordinates relative to the central cell, eg (0 0), (0 1), (-1 1), (-1 0), ..."
+  [size]
+  (loop [x    1
+         y    1
+         coll [[0 0] [1 0]]]
+    (if (and (= x size) (= y (- size)))
+      (conj coll [size (- size)])
+      (let [new (conj coll [x y])]
+        (cond
+          (= (Math/abs x) (Math/abs y)) (cond 
+                                          (and (pos? x) (pos? y)) (recur (dec x) y new)
+                                          (and (neg? x) (pos? y)) (recur x (dec y) new)
+                                          (and (neg? x) (neg? y)) (recur (inc x) y new)
+                                          (and (pos? x) (neg? y)) (recur (inc x) y new))
+          (and (< x y) (< (Math/abs x) y)) (recur (dec x) y new)
+          (and (< x y) (> (Math/abs x) y)) (recur x (dec y) new)
+          (and (> x y) (< x (Math/abs y))) (recur (inc x) y new)
+          (and (> x y) (> x (Math/abs y))) (recur x (inc y) new))))))
 
-(map (fn [x] (prn (str x " : " (vec (factors (inc (* x x)))))))
-     (range 30))
+(defn rotate
+  "rotate a 2D matrix 90 degrees, it's ok if it's not a perfect square"
+  [mat]
+  (loop [remaining (map reverse mat)
+         result []]
+    (if (every? empty? remaining) 
+      result
+      (recur (map rest remaining)
+             (conj result (remove nil? (mapv first remaining)))))))
+
+(defn spiralize
+  "take a sequence, and wrap it around a central cell until you have a 2D matrix that
+  represents the entire sequence, spiralized.
+
+  Note: This is really slow, to keep rotating the matrix over and over"
+  [start-coll]
+  (let [edge       (int (Math/ceil (Math/sqrt (count start-coll))))
+        start-legs (concat (mapcat (fn [x] [x x]) (range 1 edge)) [edge])]
+    (loop [mat  '()
+           coll start-coll
+           legs start-legs]
+      (if (empty? legs)
+        mat
+        (recur (->> mat
+                    (cons (take (first legs) coll))
+                    rotate)
+               (drop (first legs) coll)
+               (rest legs))))))
+
+(time (do
+        (spiralize (range (* 300 300)))
+        "done")) ;; "Elapsed time: 3681.074952 msecs"
+
+(defn spiral [start-col]
+  (let [dx [0 1 0 -1]
+        dy [1 0 -1 0]]
+    (loop [m   (vec (repeat n (vec (take n (repeat 0)))))
+           x   0                 ; row coordinate
+           y   -1                ; col coordinate
+           c   (first start-col) ; candidate number
+           col (rest start-col)
+           i   0                 ; iterate over each layer, or peel
+           j   0                 ; iterate through items in peel
+           ]
+      (if (>= i (+ n n -1))
+        m ;return result
+        (let [nx   (+ x (nth dx (mod i 4)))
+              ny   (+ y (nth dy (mod i 4)))
+              nm   (update-in m [nx ny] (fn [_] c))
+              nc   (first col)
+              ncol (rest col)]
+          (if (>= j (-> n (* 2) (- i) (/ 2) (Math/floor) (- 1)))
+            (recur nm nx ny nc ncol (inc i) 0)
+            (recur nm nx ny nc ncol i (inc j))))))))
+
+(spiral (take 25 (iterate inc 10)))
+(do (time (spiral (range (* 1000 1000))))
+    "done")
 
 
+
+(require '[mikera.image.core :refer [new-image get-pixels set-pixels show]])
+(require '[mikera.image.colours :refer [rand-colour]])
+
+
+(def bi (new-image 32 32))
+(def pixels (get-pixels bi))
+(dotimes [i 1024]
+  (aset pixels i 0xFFFF0000))
+(set-pixels bi pixels)
+(show bi :zoom 10.0 :title "Gorgeous!")
 
 
 ;; Scratch stuff --------------------------------------------------
