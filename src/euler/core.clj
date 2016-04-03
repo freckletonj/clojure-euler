@@ -2,8 +2,7 @@
 
 
 ;; Problem 1 --------------------------------------------------
-(defn p1 []
-  (apply + (filter #(or (= 0 (mod % 3))
+(defn p1 []  (apply + (filter #(or (= 0 (mod % 3))
                         (= 0 (mod % 5)))
                    (range 1000))))
 
@@ -617,7 +616,7 @@
       (recur (map rest remaining)
              (conj result (remove nil? (mapv first remaining)))))))
 
-(defn spiralize
+(defn spiral-slow
   "take a sequence, and wrap it around a central cell until you have a 2D matrix that
   represents the entire sequence, spiralized.
 
@@ -636,12 +635,11 @@
                (drop (first legs) coll)
                (rest legs))))))
 
-(time (do
-        (spiralize (range (* 300 300)))
-        "done")) ;; "Elapsed time: 3681.074952 msecs"
-
-(defn spiral [start-col]
-  (let [dx [0 1 0 -1]
+(defn spiral
+  "wraps starting from the top left corner and works towards the center"
+  [start-col]
+  (let [n  (Math/ceil (Math/sqrt (count start-col)))
+        dx [0 1 0 -1]
         dy [1 0 -1 0]]
     (loop [m   (vec (repeat n (vec (take n (repeat 0)))))
            x   0                 ; row coordinate
@@ -662,22 +660,152 @@
             (recur nm nx ny nc ncol (inc i) 0)
             (recur nm nx ny nc ncol i (inc j))))))))
 
-(spiral (take 25 (iterate inc 10)))
-(do (time (spiral (range (* 1000 1000))))
-    "done")
+(defn prime? [x]
+  (.isProbablePrime (BigInteger/valueOf x) 99))
+
+(prn)
+(prn (map (fn [a b] (nth a (- 12 b))) (spiral (reverse (range 1 170))) (range 0 169)))
+
+(defn p28
+  (let [x 501]
+    (- (apply + (concat
+                 (map (fn [x] (inc (* (* 2 x)
+                                      (* 2 x)))) (range 0 x))
+                 (map (fn [x] (* (inc (* 2 x))
+                                 (inc (* 2 x)))) (range 0 x))
+                 (map (fn [x] (dec (- (* (* 2 x)
+                                         (* 2 x))
+                                      (* 2 (dec x))))) (range 0 x))
+                 (map (fn [x] (- (* (inc (* 2 x))
+                                    (inc (* 2 x)))
+                                 (* 2 x))) (range 0 x))))
+       3)))
+;; ;; Makes an Ulam Spiral
+;; ;; Notice, this `mikera` library is pretty lame in how
+;; ;; side-effecty it needs to be. So the following crappy
+;; ;; code is the best I cared to make it without investing more time
+;; (require '[mikera.image.core :refer [new-image get-pixels set-pixels set-pixel show]])
+;; (require '[mikera.image.colours :refer [rand-colour]])
+;; (def edge 500)
+;; (def bi (new-image edge edge))
+;; (let [s (spiral (reverse (map (fn [x] (if (prime? x) 0xFF000000 0xFFFFFFFF)) (range (* edge edge)))))]
+;;   (for [r (range (count s))]
+;;     (for [c (range (count (nth s r)))]
+;;       (set-pixel bi r c (get-in s [r c])))))
+;; (show bi :zoom 1)
 
 
 
-(require '[mikera.image.core :refer [new-image get-pixels set-pixels show]])
-(require '[mikera.image.colours :refer [rand-colour]])
+
+;; Problem 29
+;; brute force
+
+(defn p29 []
+  (count (into #{} (apply concat (for [a (range 2 101)]
+                                   (for [b (range 2 101)]
+                                     (Math/pow a b)))))))
+
+;; elegant answer
+;; 2^4  = 4^2
+;; 2^8  = 4^4
+;; 2^12 = 4^6
+;; 3^4  = 9^2
+;; 3^6  = 9^3
+;; 3^6  = 3^(2*3)
+
+;; Problem 30
+(defn sum-pow [n pow]
+  (apply +  (map (comp (fn powify [x] (Math/pow x pow))
+                       (fn intify [x] (Character/digit x 10))) (str n))))
+
+(apply + (map #(first %) (filter (fn [[a b]] (= (int a) (int b))) (map (fn [x] [x (sum-pow x 5) ]) (range 2 1000000)))))
 
 
-(def bi (new-image 32 32))
-(def pixels (get-pixels bi))
-(dotimes [i 1024]
-  (aset pixels i 0xFFFF0000))
-(set-pixels bi pixels)
-(show bi :zoom 10.0 :title "Gorgeous!")
+;; Problem 31
+
+;; in this code, order matters (which it shouldn't), and it's really slow. Like, it can't finish for a stop of 40
+#_(time (apply + (let [leaves [1 2 5 8] #_ [1 2 5 10 20 50 100 200]
+                     stop   10 #_200]
+                 ((fn check-leaves [sum]
+                    (reduce (fn [coll leaf]
+                              (let [nsum (+ sum leaf)]
+                                (cond
+                                  (= nsum stop) (conj coll 1)
+                                  (> nsum stop) coll
+                                  :default      (apply (partial conj coll) (check-leaves nsum)))))
+                            [] leaves)) 0))))
+
+;; crap, this is the same algo as above, just real slow
+#_(time (let [leaves [1 2 5]
+            stop   10]
+        ((fn out [start]
+           (reduce
+            (fn [coll counts]
+              (let [ncounts (map + counts start)
+                    total   (apply + (map * ncounts leaves))]
+                (cond
+                  (= total stop) (conj coll ncounts)
+                  (< total stop) (apply (partial conj coll) (out ncounts))
+                  :default       coll)))
+            []
+            (map (fn [x] (assoc [0 0 0] x 1)) (range (count leaves)))))
+         [0 0 0])))
+
+;; try 3...
+(defn p31
+  "add as few to as many of the biggest coin, as will fit
+  do the same with the rest"
+  [x]
+  (time (apply + (let [beg-leaves [200 100 50 20 10 5 2 1]
+                       beg-stop   x #_200]
+                   ((fn blerg [leaves stop]
+                      (if (> (count leaves) 0)
+                        (let [fleaf    (first leaves)
+                              nleaves  (rest leaves)
+                              max-leaf (Math/floor (/ stop fleaf))]
+                          (reduce
+                           (fn red [coll lcount] (let [nstop (- stop (* fleaf lcount))]
+                                                   (cond
+                                                     (= nstop 0) (conj coll 1)
+                                                     (> nstop 0) (apply (partial conj coll) (blerg nleaves nstop))
+                                                     :else       coll)))
+                           [] (range (inc max-leaf))))
+                        []
+
+                        )) beg-leaves beg-stop)))))
+
+
+;; Problem 32 - Pandigital Products
+;; all problems of form XX * XXX = XXXX
+;; max pdt - 9876
+;; min pdt - 1234
+(defn p32
+  "answers must be of the form:
+  XX * XXX = XXXX or
+  X * XXXX = XXXX
+  
+  look from [1234 9876]
+  divide each of those by every number from [1 99] (ie X->XX)
+  if the three numbers ever match, record them in a set"
+  []
+  (time (apply +  (let [match #{\1 \2 \3 \4 \5 \6 \7 \8 \9}]
+                    (reduce (fn [coll pdt]
+                              (apply (partial conj coll) (reduce (fn [icoll divisor]
+                                                                   (let [third (/ pdt divisor)
+                                                                         string (str pdt divisor third)]
+                                                                     (if (integer? third)
+                                                                       (if (= (into #{} string) match)
+                                                                         (conj icoll pdt)
+                                                                         icoll)
+                                                                       icoll)))
+                                                                 []
+                                                                 (range 1 100))))
+                            #{}
+                            (range 1234 9877))))))
+
+
+;; Problem 33 - Digit Cancelling Fractions
+
 
 
 ;; Scratch stuff --------------------------------------------------
