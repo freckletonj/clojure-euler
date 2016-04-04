@@ -1,14 +1,7 @@
-# euler
+# Purpose
 
-A Clojure library designed to ... well, that part is up to you.
+To learn clojure by solving Project Euler problems.
 
-## Usage
+Feel free to check it out if it can help you.
 
-FIXME
-
-## License
-
-Copyright © 2016 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+And make suggestions if I've done something crazy, or inefficient (likely)!
