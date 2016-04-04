@@ -805,7 +805,141 @@
 
 
 ;; Problem 33 - Digit Cancelling Fractions
+;; divisor/dividend = quotient
+;; consider all ab/cd = q
+(defn p33
+  "find all ax/xb where ax/xb = a/b"
+  []
+  (reduce (fn [pdt x] (-> pdt
+                          (* (first x))
+                          (/ (second x))))
+          1
+          #spy/p (remove nil? (->>  (for [a (range 1 10)]
+                                      (for [b (range 10)]
+                                        (for [c (range 10)]
+                                          (for [d (range 1 10)]
+                                            (let [top (-> a (* 10) (+ b))
+                                                  bot (-> c (* 10) (+ d))]
+                                              (cond
+                                                (= 0 bot)                             nil
+                                                (= a b)                               nil
+                                                (= b d)                               nil
+                                                (> top bot)                           nil
+                                                (and (= b c) (= (/ top bot) (/ a d))) [top bot]
+                                                ))))))
+                                    (apply concat)
+                                    (apply concat)
+                                    (apply concat)))))
 
+;; Problem 34 - Digit Factorials
+(defn fact
+  ([x] (fact 1 (BigInteger/valueOf x)))
+  ([pdt x] (if (> x 1)
+             (fact (* pdt x) (dec x))
+             pdt)))
+
+;; the biggest factorial digit sum cannot be more than:
+;; max - 2540160
+;; (map #(as-> (fact 9) m
+;;         (* m %)
+;;         [m (Integer. (apply str (take % (repeat 9))))]) (range 1 10))
+
+(defn p34
+  "pretty straight forward.
+  notice, the actual max is waaaay less than my theoretical max
+  my theoretical math takes eons to complete, so... that's good to know"
+  []
+  (filter (fn [x] (= (->> x
+                        (str)
+                        (map #(Character/digit % 10))
+                        (map #(fact %))
+                        (apply +))
+                     x))
+          (range 3 100000 #_2540161)))
+
+;; Problem 35 - Circular primes
+(defn prime? [x]
+  (.isProbablePrime (BigInteger/valueOf x) 95))
+
+(defn rotations [x]
+  (map (fn [d] (Integer. (apply str (take (count (str x)) (drop d (cycle (str x)))))))
+       (range (count (str x)))))
+
+(defn p35 []
+  (time (count (filter (fn [x]
+                         (if (prime? x)
+                           (reduce (fn [a b] (and a b)) (map prime? (rotations x)))))
+                       (range 1 1000000)))))
+
+
+;; Problem 36 - double base palindromes
+(defn p36 []
+  (apply + (filter (fn [x] (let [bin (Integer/toString x 2)
+                                 sx (str x)]
+                             (and (= (seq sx) (reverse sx))
+                                  (= (seq bin) (reverse bin)))))
+                   (range 1000000))))
+
+
+;; Problem 37 - truncatable primes
+(defn truncs
+  "list of truncating from L->R, and R->L"
+  [x]
+  (concat
+   (map (fn [d] (Integer. (apply str (drop d (str x))))) (range (count (str x))))
+   (map (fn [d] (Integer. (apply str (reverse (drop d (reverse (str x))))))) (range 1 (count (str x))))))
+
+(defn p37 []
+  (time (apply + (let [stop 11]
+                   (loop [found []
+                          digit 10]
+                     (if (>= (count found) stop)
+                       found
+                       (if (and (prime? digit) (reduce #(and %1 %2) (map prime? (truncs digit))))
+                         (recur (conj found digit) (inc digit))
+                         (recur found (inc digit)))))))))
+
+;; Problem 38 - pandigital multiples
+;; note, it must start with digit 9
+;; the answer is not 9 (1 2 3 4 5)
+;; the answer is not 9XX (1 2 3), since that is more than 987654321
+;; the answer must be 9XXXX (1 2)
+
+(defn con-prod [x]
+  (apply str (map #(* x %) [1 2])))
+(defn p38 []
+  (con-prod (last (sort (let [target [\1 \2 \3 \4 \5 \6 \7 \8 \9]]
+                          (filter (fn [x] (= target (sort (into [] (con-prod x))))) (range 1000 10000)))))))
+
+
+;; Problem 39 - integer right triangles
+(defn right? [a b c]
+  (= (* c c) (+ (* a a) (* b b))))
+
+(defn possible-sides [c]
+  (into #{} (map #( into #{} (map int %)) (filter #(= (Math/ceil (second %)) ; make sure it's an int
+                                                      (Math/floor (second %)))
+                                      (for [a (range 1 c)]
+                                        [a (Math/sqrt (- (* c c) (* a a)))])))))
+(defn p39
+  "1. find all a's and b's for probable c's
+  2. take all a+b+c perimeters, and add them to a map, where p is the key
+  3. which key has the biggest count of solutions?"
+  []
+  (first (reverse (sort-by val (reduce
+                                (fn iter-sols [coll [c sols]]
+                                  (reduce
+                                   (fn updatep [icoll sol]
+                                     (update icoll (+ c (first sol) (second sol)) #(if % (inc %) 1)))
+                                   coll
+                                   sols))
+                                {}
+                                (remove #(empty? (second %)) (map (fn [x] [x (possible-sides x)]) (range 1 500))))))))
+
+(time (p39))
+
+
+;; Problem 40 -
 
 
 ;; Scratch stuff --------------------------------------------------
