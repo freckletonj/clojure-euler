@@ -936,26 +936,118 @@
                                 {}
                                 (remove #(empty? (second %)) (map (fn [x] [x (possible-sides x)]) (range 1 500))))))))
 
-(time (p39))
+
+;; Problem 40 -Champernowne's constant
+(defn expt [x n]
+  (reduce * (take n (repeat x))))
+
+(defn str-nums
+  "0.123456789101112131415...
+  note: mapping `Character/digit` over the `seq` slowed it down a ton
+  whereas before, it was just returning characters, ie [\1 \2 \3 ...]"
+  ([] (str-nums 0))
+  ([x] (lazy-seq (concat (map #(Character/digit % 10) (seq (str x))) (str-nums (inc x))))))
 
 
-;; Problem 40 -
+(defn p40 []
+  (reduce * (map (fn [x] (as-> x y
+                                      (expt 10 y)
+                                      (nth (str-nums) y)))
+                            (range 0 7))))
+
+
+;; Problem 41 - Pandigital Prime
+(defn permutations [xs]
+  (if (= 1 (count xs))
+    [[(first xs)]]
+    (mapcat (fn [i] (let [f (nth xs i)
+                          r  (concat (take i xs) (drop (inc i) xs))]
+                      (map #(cons f %) (permutations r))))
+            (range (count xs)))))
+
+(defn prime? [x]
+  (.isProbablePrime (BigInteger/valueOf x) 95))
+
+(defn p41 []
+  (first  ((comp reverse sort) (filter prime? (map #(Integer. (apply str %)) (permutations (range 1 8)))))))
+
+
+;; Problem 42 - Coded triangle numbers
+(def words (slurp "data/p042_words.txt"))
+(def char-map (into {} (map vector (map char (range 65 91)) (range 1 27))))
+(defn nth-tri [n] (-> n
+                      (+ 1)
+                      (* n)
+                      (* 0.5)
+                      (int)))
+(def tris (into #{} (map nth-tri (range 1000))))
+(defn str-to-num [x] (apply + (map char-map x)))
+
+(defn p42 []
+  (count (filter (fn [word] (contains? tris (long (str-to-num word))))
+                 (-> words
+                     (clojure.string/replace #"\"" "")
+                     (clojure.string/split #",")))))
+
+
+;; Problem 43 - Sub-string divisibility
+(def primes [1 2 3 5 7 11 13 17])
+(defn seq-to-num [xs]
+  (BigInteger. (apply str xs)))
+(defn p43 [] (apply + (map first (filter (fn [[s xs]] ; filter only things where theyre divisible by the appropriate prime
+                                           (every? zero? (map #(mod (second %) (first %)) xs)))
+                                         (map
+                                          (fn [x] [(first x) (map vector primes (rest x))]) ; pair with the divisor
+                                          ((fn [seed] (map ; all substrings
+                                                       #(as-> % m (map seq-to-num (partition 3 1 m)) (conj m (seq-to-num %)))
+                                                       (permutations seed)))
+                                           [0 1 2 3 4 5 6 7 8 9]))))))
+
+;; Problem 44 - Pentagon numbers
+
+(defn pents
+  "lazy seq of polynomial numbers"
+  ([] (pents 1))
+  ([n]
+   (lazy-seq (cons (-> n (* 3) (- 1) (* n) (/ 2))
+                   (pents (inc n))))))
+(defn quad
+  "solve a polynomial where y=0"
+  [a b c]
+  (map (fn [f] (-> (- b)
+                   (f (Math/sqrt (- (* b b)
+                                    (* 4 a c))))
+                   (/ (* 2 a))))
+       [+ -]))
+
+(defn pent?
+  "return true if the number is a pentagonal number"
+  [p]
+  (-> (quad 3 -1 (- (* 2 p)))
+      first
+      inty?))
+
+(defn inty?
+  "ex:
+  (inty? 3.0) => true
+  (inty? 3.001) => false"
+  [x]
+  (= x (Math/floor x)))
+
+(defn p44
+  "slow..."
+  [] (->> (remove nil? (let [n 10000]
+                                 (for [a (take n (pents))
+                                       b (take n (pents))]
+                                   (if (and (pent? (- a b))
+                                            (pent? (+ a b)))
+                                     [a b]))))
+                  (first)
+                  (apply -)))
+
+
+
+
 
 
 ;; Scratch stuff --------------------------------------------------
-(map #(println "--------------------------------------------------" %) (range 10))
-(transduce (comp (map inc) (filter odd?)) + 0 [1 2 3])
-(+)
-
-(use 'clojure.repl)
-(doc sort-by)
-
-(get {123 :a 456 :b} 456)
-(update {:a [1] 123 [55]} 5 (fn [x] (cons 2 x)))
-
-(sort [[9 4 1] [1 4 9] [4 9 1] [1 9 4]])
-(:d (conj {:a 1 :b 2} {:c 3}))
-(nth [1 2 3] 0)
-(cons 1 [2 3 4])
-(conj [1 2 3] 4)
-(concat [1] [2 3 4])

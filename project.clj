@@ -6,4 +6,6 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [org.clojure/math.combinatorics "0.1.1"]
-                 [net.mikera/imagez "0.10.0"]])
+                 [org.clojure/core.logic "0.8.10"]
+                 [net.mikera/imagez "0.10.0"]
+                 ])
