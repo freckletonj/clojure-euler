@@ -1045,7 +1045,39 @@
                   (first)
                   (apply -)))
 
+;; Problem 45 - no interest right now
+;; Problem 46 - Godlbach's other conjecture
+(defn prime? [x]
+  (.isProbablePrime (BigInteger/valueOf x) 95))
 
+(def odd-composites
+  (drop 1 (remove #(or (even? %)
+                       (prime? %))
+                  (range))))
+
+(defn p46 []
+  (loop [remaining odd-composites
+         i         1  ; i is the variable in the 2*i^2
+         fits      [] ; for each twice-square, is the remainder prime?
+                                        ; if one of these is true, the conjecture holds for this number
+                                        ; if none are true, this number breaks the conjecture
+         ]
+    (let [n  (first remaining)  ; odd-composite under consideration
+          ts (-> i (* i) (* 2)) ; twice-square
+          r  (- n ts)           ; remainder
+          p? (prime? r)         ; primality of the remainder
+          ]
+      (cond
+                                        ; possible primes are now negative
+        (neg? r) (if (reduce (fn [c x] (or c x)) fits) ; did any iteration of i fit the conjecture?
+                   (recur (drop 1 remaining) ; iterate on next odd-composite
+                          1
+                          [])
+                   n ; exit point, found one number that didn't fit the conjecture
+                   )
+        :else    (recur remaining ; check ever-increasing twice squares
+                        (inc i)
+                        (conj fits p?))))))
 
 
 
