@@ -1080,6 +1080,37 @@
                         (conj fits p?))))))
 
 
+;; Problem 47 - Distinct Primes Factors
+(defn prime? [x]
+  (.isProbablePrime (BigInteger/valueOf x) 95))
+(def primes (filter prime? (range)))
+(defn prime-factors [x]
+  (loop [pfs       []     ; prime factors found so far
+         ps        primes ; holds current primes under observation
+         remainder x      ; the ever-shrinking number
+         ]
+    (let [test   (first ps) ; divide remainder by this
+          newrem (/ remainder test)]
+      (cond
+        (= 1 remainder)    pfs ; success, pfs found
+        (> test remainder) [] ; failed, nothing found
+        (integer? newrem)  (recur (conj pfs test) ps newrem)
+        :else              (recur pfs (rest ps) remainder)
+        ))))
+
+(defn p47 [target]
+  (loop [coll [] ; hold consecutive matches
+         n    2  ; current number under consideration
+         ]
+    (let [pfs    (into #{} (prime-factors n))
+          cntpfs (count pfs)]
+      (cond
+        (= target (count coll)) coll
+        (= target cntpfs)       (recur (conj coll n) (inc n))
+        :else              (recur [] (inc n))))))
+
+;; Problem 48 - Self Powers
 
 
-;; Scratch stuff --------------------------------------------------
+
+
